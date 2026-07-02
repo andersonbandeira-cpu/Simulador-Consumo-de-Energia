@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consumo de energia elétrica</title>
+<style>
+  :root{
+    --bg:#EDF0F3;--panel:#FFFFFF;--ink:#15222E;--muted:#5C6B78;--line:#D7DEE4;
+    --frio:#0E7C9B;--frio-soft:#E3F1F5;--quente:#DC4E2A;--quente-soft:#FBE7DF;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.5;padding:22px 16px 40px}
+  .wrap{max-width:900px;margin:0 auto}
+  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+  .sub{color:var(--muted);font-size:14px;margin-top:8px;max-width:64ch}
+
+  .globals{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px}
+  .gitem{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;flex:1;min-width:150px}
+  .gitem label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .gitem .inrow{display:flex;align-items:baseline;gap:6px}
+  .gitem .pre{font-family:var(--mono);color:var(--muted);font-size:15px}
+
+  input[type=number]{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);border:none;border-bottom:2px solid var(--line);background:transparent;width:100%;padding:2px 0;outline:none}
+  input[type=number]:focus{border-color:var(--frio)}
+  input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+  .appl{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px;display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:start}
+
+  .photo{position:relative;border-radius:12px;overflow:hidden;background:#F5F7F9;border:1px solid var(--line);aspect-ratio:4/3;cursor:pointer}
+  .photo svg,.photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .photo .upl{position:absolute;left:0;right:0;bottom:0;background:rgba(21,34,46,.82);color:#fff;font-size:11px;font-weight:600;letter-spacing:.04em;text-align:center;padding:6px;opacity:0;transition:opacity .15s}
+  .photo:hover .upl,.photo:focus-within .upl{opacity:1}
+
+  .body h2{font-size:17px;font-weight:700;margin-bottom:14px}
+  .fields{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px}
+  .fields.three{grid-template-columns:repeat(3,1fr)}
+  .field label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .field .unit{font-family:var(--mono);color:var(--muted);font-size:12px;text-transform:none;letter-spacing:0}
+  .timewrap{display:flex;gap:8px;align-items:flex-end}
+  .timewrap input{flex:1}
+  select{font-family:system-ui,sans-serif;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:#fff;color:var(--ink);outline:none}
+
+  .results{display:grid;gap:12px}
+  .results.two{grid-template-columns:1fr 1fr}
+  .results.one{grid-template-columns:1fr}
+  .res{border-radius:12px;padding:14px 16px;border:1px solid var(--line);background:#F5F7F9}
+  .res.frio{background:var(--frio-soft);border-color:#BFE0E9}
+  .res.quente{background:var(--quente-soft);border-color:#F3C9B9}
+  .res .tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .frio-txt{color:var(--frio)} .quente-txt{color:var(--quente)}
+  .res .money{font-family:var(--mono);font-size:24px;font-weight:700;margin-top:8px;line-height:1}
+  .res .money .cur{font-size:14px;vertical-align:top;font-weight:600}
+  .res .kwh{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:5px}
+
+  .total{margin-top:20px;background:var(--ink);color:#fff;border-radius:16px;padding:20px}
+  .total h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#9FB0BC;font-weight:700;margin-bottom:6px}
+  .total .note{font-size:12px;color:#8496A2;margin-bottom:14px}
+  .total .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .total .block .lbl{font-size:12px;font-weight:600;letter-spacing:.05em}
+  .total .block.frio .lbl{color:#7FD3E6}
+  .total .block.quente .lbl{color:#F6A488}
+  .total .block .val{font-family:var(--mono);font-size:30px;font-weight:700;margin-top:8px;line-height:1}
+  .total .block .val .cur{font-size:16px;vertical-align:top;font-weight:600}
+  .total .block .sub2{font-family:var(--mono);font-size:12px;color:#9FB0BC;margin-top:6px}
+
+  .foot{font-size:12px;color:var(--muted);margin-top:18px;line-height:1.6}
+  .foot code{font-family:var(--mono);background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+
+  @media(max-width:640px){
+    .appl{grid-template-columns:1fr}
+    .photo{max-width:220px}
+    .fields,.fields.three{grid-template-columns:1fr 1fr}
+    .results.two{grid-template-columns:1fr}
+    .total .grid{grid-template-columns:1fr}
+    h1{font-size:22px}
+  }
+</style>
+</head>
+<body>
+
+<!-- GATE DE CADASTRO -->
+<div id="gate" style="position:fixed;inset:0;background:rgba(21,34,46,.96);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:400px;width:100%">
+    <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#5C6B78;font-weight:700;margin-bottom:8px">Simulador gratuito</div>
+    <h2 style="font-size:20px;font-weight:700;line-height:1.2;margin-bottom:6px">Consumo de energia elétrica</h2>
+    <p style="font-size:13px;color:#5C6B78;margin-bottom:18px">Preencha seus dados para acessar a simulação de consumo de ar-condicionado, aquecedor e chuveiro elétrico.</p>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5C6B78;font-weight:700;margin-bottom:6px">Nome</label>
+      <input type="text" id="leadNome" placeholder="Seu nome" style="width:100%;font-size:15px;padding:10px 12px;border:1px solid #D7DEE4;border-radius:10px;outline:none;font-family:inherit">
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#5C6B78;font-weight:700;margin-bottom:6px">Telefone / WhatsApp</label>
+      <input type="tel" id="leadFone" placeholder="(51) 99999-9999" style="width:100%;font-size:15px;padding:10px 12px;border:1px solid #D7DEE4;border-radius:10px;outline:none;font-family:inherit">
+    </div>
+    <div id="gateErro" style="display:none;font-size:12px;color:#DC4E2A;margin-bottom:12px;font-weight:600">Preencha o nome e um telefone válido para continuar.</div>
+    <button id="gateBtn" style="width:100%;background:#0E7C9B;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Iniciar simulação</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1 style="color:#fff">Consumo de energia elétrica</h1>
+  <p class="sub">Ajuste a potência, o tempo de uso e a tarifa. Clique em qualquer foto para substituir pela imagem real do seu produto. Referência de tarifa: R$ 1,00/kWh.</p>
+
+  <div class="globals">
+    <div class="gitem">
+      <label>Tarifa de energia</label>
+      <div class="inrow"><span class="pre">R$</span><input type="number" id="tar" value="1.00" step="0.01" min="0"><span class="pre">/kWh</span></div>
+    </div>
+    <div class="gitem">
+      <label>Dias no mês</label>
+      <div class="inrow"><input type="number" id="dias" value="30" step="1" min="1" max="31"></div>
+    </div>
+  </div>
+
+  <!-- AR-CONDICIONADO -->
+  <div class="appl" data-appl data-type="ac">
+    <div class="photo" data-photo tabindex="0">
+      <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg" aria-label="Ar-condicionado split">
+        <rect width="200" height="150" fill="#EAF3F6"/>
+        <rect x="26" y="40" width="148" height="46" rx="10" fill="#fff" stroke="#0E7C9B" stroke-width="2.5"/>
+        <line x1="34" y1="66" x2="166" y2="66" stroke="#BFE0E9" stroke-width="2"/>
+        <line x1="34" y1="73" x2="166" y2="73" stroke="#BFE0E9" stroke-width="2"/>
+        <rect x="34" y="80" width="132" height="4" rx="2" fill="#0E7C9B"/>
+        <circle cx="156" cy="52" r="3" fill="#0E7C9B"/>
+        <path d="M60 100 q6 8 12 0" stroke="#0E7C9B" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M94 106 q6 8 12 0" stroke="#0E7C9B" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M128 100 q6 8 12 0" stroke="#0E7C9B" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="upl">Clique para trocar a foto</div>
+      <input type="file" accept="image/*" class="file" hidden>
+    </div>
+    <div class="body">
+      <h2>Ar-condicionado</h2>
+      <div class="fields three">
+        <div class="field"><label>Capacidade <span class="unit">(BTU/h)</span></label><input type="number" class="btu" value="12000" step="1000" min="0"></div>
+        <div class="field"><label>Tecnologia</label><select class="tec" style="width:100%;padding:7px 6px;font-size:14px"><option value="3.5" selected>Inverter</option><option value="2.8">Não inverter</option></select></div>
+        <div class="field"><label>Tempo de uso / dia</label>
+          <div class="timewrap"><input type="number" class="tempo" value="8" step="0.5" min="0"><select class="unidade"><option value="h" selected>horas</option><option value="min">minutos</option></select></div>
+        </div>
+      </div>
+      <div class="results one">
+        <div class="res"><div class="tag">Consumo estimado · <span class="wcalc">–</span> W</div><div class="money"><span class="cur">R$ </span><span class="rmax">–</span></div><div class="kwh"><span class="kmax">–</span> kWh/mês</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AQUECEDOR -->
+  <div class="appl" data-appl data-type="heater">
+    <div class="photo" data-photo tabindex="0">
+      <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg" aria-label="Aquecedor elétrico">
+        <rect width="200" height="150" fill="#FBEEE8"/>
+        <rect x="72" y="28" width="56" height="86" rx="12" fill="#fff" stroke="#DC4E2A" stroke-width="2.5"/>
+        <line x1="84" y1="44" x2="116" y2="44" stroke="#F3C9B9" stroke-width="3" stroke-linecap="round"/>
+        <line x1="84" y1="54" x2="116" y2="54" stroke="#F3C9B9" stroke-width="3" stroke-linecap="round"/>
+        <line x1="88" y1="70" x2="112" y2="70" stroke="#DC4E2A" stroke-width="4" stroke-linecap="round"/>
+        <line x1="88" y1="82" x2="112" y2="82" stroke="#DC4E2A" stroke-width="4" stroke-linecap="round"/>
+        <rect x="80" y="114" width="40" height="8" rx="3" fill="#DC4E2A"/>
+        <path d="M92 22 q-5 -8 0 -14" stroke="#DC4E2A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M108 22 q5 -8 0 -14" stroke="#DC4E2A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="upl">Clique para trocar a foto</div>
+      <input type="file" accept="image/*" class="file" hidden>
+    </div>
+    <div class="body">
+      <h2>Aquecedor elétrico</h2>
+      <div class="fields">
+        <div class="field"><label>Potência <span class="unit">(W)</span></label><input type="number" class="pot" value="1500" step="50" min="0"></div>
+        <div class="field"><label>Tempo de uso / dia</label>
+          <div class="timewrap"><input type="number" class="tempo" value="4" step="0.5" min="0"><select class="unidade"><option value="h" selected>horas</option><option value="min">minutos</option></select></div>
+        </div>
+      </div>
+      <div class="results one">
+        <div class="res"><div class="tag">Consumo estimado</div><div class="money"><span class="cur">R$ </span><span class="rmax">–</span></div><div class="kwh"><span class="kmax">–</span> kWh/mês</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHUVEIRO -->
+  <div class="appl" data-appl data-type="shower">
+    <div class="photo" data-photo tabindex="0">
+      <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg" aria-label="Chuveiro elétrico">
+        <rect width="200" height="150" fill="#EAF3F6"/>
+        <path d="M60 40 h80 a6 6 0 0 1 6 6 v6 h-92 v-6 a6 6 0 0 1 6 -6 z" fill="#fff" stroke="#0E7C9B" stroke-width="2.5"/>
+        <rect x="96" y="24" width="8" height="18" rx="3" fill="#0E7C9B"/>
+        <circle cx="72" cy="52" r="2" fill="#0E7C9B"/><circle cx="88" cy="52" r="2" fill="#0E7C9B"/>
+        <circle cx="104" cy="52" r="2" fill="#0E7C9B"/><circle cx="120" cy="52" r="2" fill="#0E7C9B"/><circle cx="128" cy="52" r="2" fill="#0E7C9B"/>
+        <line x1="70" y1="66" x2="66" y2="86" stroke="#4FB0CC" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="86" y1="66" x2="82" y2="92" stroke="#4FB0CC" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="102" y1="66" x2="100" y2="96" stroke="#4FB0CC" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="118" y1="66" x2="116" y2="92" stroke="#4FB0CC" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="132" y1="66" x2="130" y2="86" stroke="#4FB0CC" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <div class="upl">Clique para trocar a foto</div>
+      <input type="file" accept="image/*" class="file" hidden>
+    </div>
+    <div class="body">
+      <h2>Chuveiro elétrico</h2>
+      <div class="fields">
+        <div class="field"><label>Potência mín. <span class="unit">(W · verão)</span></label><input type="number" class="pmin" value="3200" step="100" min="0"></div>
+        <div class="field"><label>Potência máx. <span class="unit">(W · inverno)</span></label><input type="number" class="pmax" value="7500" step="100" min="0"></div>
+        <div class="field"><label>Banhos / dia</label><input type="number" class="banhos" value="4" step="1" min="0"></div>
+        <div class="field"><label>Tempo por banho</label>
+          <div class="timewrap"><input type="number" class="tempo" value="10" step="1" min="0"><select class="unidade"><option value="h">horas</option><option value="min" selected>minutos</option></select></div>
+        </div>
+      </div>
+      <div class="results two">
+        <div class="res frio"><div class="tag frio-txt">Mínimo · verão</div><div class="money frio-txt"><span class="cur">R$ </span><span class="rmin">–</span></div><div class="kwh"><span class="kmin">–</span> kWh/mês</div></div>
+        <div class="res quente"><div class="tag quente-txt">Máximo · inverno</div><div class="money quente-txt"><span class="cur">R$ </span><span class="rmax">–</span></div><div class="kwh"><span class="kmax">–</span> kWh/mês</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="total">
+    <h3>Total mensal · soma dos três aparelhos</h3>
+    <div class="note">Faixa definida pela posição do chuveiro (verão → inverno). Ar-condicionado e aquecedor entram com valor fixo.</div>
+    <div class="grid">
+      <div class="block frio">
+        <div class="lbl">Cenário mínimo</div>
+        <div class="val"><span class="cur">R$ </span><span id="totRmin">–</span></div>
+        <div class="sub2"><span id="totKmin">–</span> kWh/mês</div>
+      </div>
+      <div class="block quente">
+        <div class="lbl">Cenário máximo</div>
+        <div class="val"><span class="cur">R$ </span><span id="totRmax">–</span></div>
+        <div class="sub2"><span id="totKmax">–</span> kWh/mês</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERESSE EM ENERGIA SOLAR -->
+  <div style="margin-top:16px;background:#fff;border:1px solid #D7DEE4;border-radius:16px;padding:22px">
+    <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">☀️ Quer reduzir esse valor da sua conta?</h3>
+    <p style="font-size:14px;color:#5C6B78;margin-bottom:16px">Com energia solar, boa parte desse consumo pode ser gerada na sua própria casa. Você tem interesse em receber uma avaliação gratuita?</p>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <label style="flex:1;border:2px solid #D7DEE4;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:15px;cursor:pointer" id="lblSim">
+        <input type="radio" name="solar" value="Sim" style="margin-right:6px">Sim
+      </label>
+      <label style="flex:1;border:2px solid #D7DEE4;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:15px;cursor:pointer" id="lblNao">
+        <input type="radio" name="solar" value="Não" style="margin-right:6px">Não
+      </label>
+    </div>
+    <button id="enviarBtn" style="width:100%;background:#DC4E2A;color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Enviar minha simulação</button>
+    <div id="enviarOk" style="display:none;margin-top:12px;font-size:13px;color:#0E7C9B;font-weight:600">✓ Obrigado! Seus dados foram enviados.</div>
+  </div>
+
+  <p class="foot">
+    Cálculo: <code>consumo (kWh) = potência (kW) × horas de uso × dias</code>, multiplicado pela tarifa.
+    Para o ar-condicionado, a potência elétrica é estimada a partir da capacidade em BTU/h, considerando eficiência típica de <code>Inverter (EER 3,5)</code> ou <code>Não inverter (EER 2,8)</code>.
+    Valores estimados; o consumo real varia com temperatura, isolamento e regulagem. Ajuste a tarifa conforme a distribuidora e a bandeira tarifária.
+  </p>
+</div>
+
+<script>
+  const fmt=(n,d=2)=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const num=el=>{const v=parseFloat(String(el.value).replace(',','.'));return isNaN(v)?0:v;};
+  const horas=(card)=>{const t=num(card.querySelector('.tempo'));const u=card.querySelector('.unidade').value;return u==='min'?t/60:t;};
+
+  function calc(){
+    const tar=num(document.getElementById('tar'));
+    const dias=num(document.getElementById('dias'));
+    let totRmin=0,totRmax=0,totKmin=0,totKmax=0;
+
+    document.querySelectorAll('[data-appl]').forEach(card=>{
+      const type=card.dataset.type;
+      const h=horas(card);
+
+      if(type==='ac'){
+        const btu=num(card.querySelector('.btu'));
+        const eer=parseFloat(card.querySelector('.tec').value);
+        const w=btu*0.293/eer;
+        card.querySelector('.wcalc').textContent=fmt(w,0);
+        const k=(w/1000)*h*dias, r=k*tar;
+        card.querySelector('.kmax').textContent=fmt(k,0);
+        card.querySelector('.rmax').textContent=fmt(r);
+        totRmin+=r; totRmax+=r; totKmin+=k; totKmax+=k;
+      }
+      else if(type==='heater'){
+        const w=num(card.querySelector('.pot'));
+        const k=(w/1000)*h*dias, r=k*tar;
+        card.querySelector('.kmax').textContent=fmt(k,0);
+        card.querySelector('.rmax').textContent=fmt(r);
+        totRmin+=r; totRmax+=r; totKmin+=k; totKmax+=k;
+      }
+      else if(type==='shower'){
+        const banhos=num(card.querySelector('.banhos'));
+        const hTot=h*banhos;
+        const wmin=num(card.querySelector('.pmin'));
+        const wmax=num(card.querySelector('.pmax'));
+        const kmin=(wmin/1000)*hTot*dias, kmax=(wmax/1000)*hTot*dias;
+        const rmin=kmin*tar, rmax=kmax*tar;
+        card.querySelector('.kmin').textContent=fmt(kmin,0);
+        card.querySelector('.kmax').textContent=fmt(kmax,0);
+        card.querySelector('.rmin').textContent=fmt(rmin);
+        card.querySelector('.rmax').textContent=fmt(rmax);
+        totRmin+=rmin; totRmax+=rmax; totKmin+=kmin; totKmax+=kmax;
+      }
+    });
+
+    document.getElementById('totRmin').textContent=fmt(totRmin);
+    document.getElementById('totRmax').textContent=fmt(totRmax);
+    document.getElementById('totKmin').textContent=fmt(totKmin,0);
+    document.getElementById('totKmax').textContent=fmt(totKmax,0);
+  }
+
+  // troca de foto (em memória, via FileReader)
+  document.querySelectorAll('[data-photo]').forEach(ph=>{
+    const file=ph.querySelector('.file');
+    const open=()=>file.click();
+    ph.addEventListener('click',e=>{if(e.target!==file)open();});
+    ph.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+    file.addEventListener('change',()=>{
+      const f=file.files[0]; if(!f)return;
+      const reader=new FileReader();
+      reader.onload=ev=>{
+        const svg=ph.querySelector('svg'); if(svg)svg.remove();
+        let img=ph.querySelector('img');
+        if(!img){img=document.createElement('img');ph.insertBefore(img,ph.querySelector('.upl'));}
+        img.src=ev.target.result;
+      };
+      reader.readAsDataURL(f);
+    });
+  });
+
+  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',calc));
+  calc();
+
+  // ===== GATE DE CADASTRO =====
+  const gate=document.getElementById('gate');
+  document.getElementById('gateBtn').addEventListener('click',()=>{
+    const nome=document.getElementById('leadNome').value.trim();
+    const fone=document.getElementById('leadFone').value.replace(/\D/g,'');
+    if(!nome||fone.length<10){document.getElementById('gateErro').style.display='block';return;}
+    gate.style.display='none';
+  });
+
+  // ===== ENVIO DA SIMULAÇÃO =====
+  // Número de destino dos leads (WhatsApp)
+  const WHATSAPP_DESTINO='5551991561742';
+
+  document.getElementById('enviarBtn').addEventListener('click',()=>{
+    const nome=document.getElementById('leadNome').value.trim();
+    const fone=document.getElementById('leadFone').value.trim();
+    const solarEl=document.querySelector('input[name="solar"]:checked');
+    const solar=solarEl?solarEl.value:'Não informado';
+    const tar=document.getElementById('tar').value;
+    const rmin=document.getElementById('totRmin').textContent;
+    const rmax=document.getElementById('totRmax').textContent;
+    const kmin=document.getElementById('totKmin').textContent;
+    const kmax=document.getElementById('totKmax').textContent;
+
+    let msg;
+    if(solar==='Sim'){
+      msg=
+`Olá! Meu nome é ${nome} e tenho interesse em energia solar. Gostaria de receber uma avaliação e vou enviar em seguida uma foto ou arquivo da minha conta de energia.
+
+📞 Meu telefone: ${fone}`;
+    }else{
+      msg=
+`Olá! Meu nome é ${nome} e acabei de fazer a simulação de consumo de energia.
+
+📞 Meu telefone: ${fone}`;
+    }
+
+    window.open('https://wa.me/'+WHATSAPP_DESTINO+'?text='+encodeURIComponent(msg),'_blank');
+    document.getElementById('enviarOk').style.display='block';
+  });
+
+  // destaque visual da opção escolhida
+  document.querySelectorAll('input[name="solar"]').forEach(r=>{
+    r.addEventListener('change',()=>{
+      document.getElementById('lblSim').style.borderColor=r.value==='Sim'&&r.checked?'#0E7C9B':'#D7DEE4';
+      document.getElementById('lblNao').style.borderColor=r.value==='Não'&&r.checked?'#DC4E2A':'#D7DEE4';
+    });
+  });
+</script>
+</body>
+</html>

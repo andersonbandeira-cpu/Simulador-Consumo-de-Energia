@@ -81,17 +81,6 @@
 </head>
 <body>
 
-<!-- GATE DE CADASTRO -->
-<div id="gate" style="position:fixed;inset:0;background:rgba(21,34,46,.96);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto">
-  <div style="background:#fff;border-radius:16px;padding:20px;max-width:460px;width:100%;max-height:95vh;overflow:auto">
-    <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#5C6B78;font-weight:700;margin-bottom:6px">Simulador gratuito</div>
-    <h2 style="font-size:19px;font-weight:700;line-height:1.2;margin-bottom:4px">Consumo de energia elétrica</h2>
-    <p style="font-size:13px;color:#5C6B78;margin-bottom:12px">Preencha e <b>envie</b> o formulário abaixo para acessar a simulação.</p>
-    <iframe id="gateForm" src="https://forms.microsoft.com/Pages/ResponsePage.aspx?id=Mc_rUTlYLkGDu4AaK6eGJ2103nzqeGRJghSl-t_CWnNUME5FVzdERUY2SDhISFVSRU1TMTM4VTZRRS4u&embed=true" style="width:100%;height:420px;border:1px solid #D7DEE4;border-radius:12px" frameborder="0" allowfullscreen></iframe>
-    <p style="margin-top:12px;font-size:12px;color:#5C6B78;text-align:center">Após enviar o formulário, a calculadora abre automaticamente.</p>
-  </div>
-</div>
-
 <div class="wrap">
   <h1 style="color:#fff">Consumo de energia elétrica</h1>
   <p class="sub">Ajuste a potência, o tempo de uso e a tarifa. Clique em qualquer foto para substituir pela imagem real do seu produto. Referência de tarifa: R$ 1,00/kWh.</p>
@@ -332,15 +321,6 @@
   document.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',calc));
   calc();
 
-  // ===== GATE DE CADASTRO =====
-  // O Forms recarrega o iframe ao ser enviado (página de "obrigado");
-  // o segundo carregamento libera a calculadora automaticamente.
-  const gate=document.getElementById('gate');
-  let cargas=0;
-  document.getElementById('gateForm').addEventListener('load',()=>{
-    cargas++;
-    if(cargas>=2){setTimeout(()=>{gate.style.display='none';},1200);}
-  });
 
   // ===== ENVIO DA SIMULAÇÃO =====
   // Número de destino dos leads (WhatsApp)
